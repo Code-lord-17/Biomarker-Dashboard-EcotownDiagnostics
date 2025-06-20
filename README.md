@@ -49,22 +49,16 @@ Biomarker-Dashboard/
    cd Biomarker-Dashboard-EcotownDiagnostics
 Create virtual environment (optional but recommended)
 
-bash
-Copy
-Edit
+
 python -m venv venv
 source venv/bin/activate  # or venv\Scripts\activate on Windows
 Install dependencies
 
-bash
-Copy
-Edit
+
 pip install -r requirements.txt
 Run the server
 
-bash
-Copy
-Edit
+
 python app.py
 Visit http://localhost:5000 to use the app.
 
