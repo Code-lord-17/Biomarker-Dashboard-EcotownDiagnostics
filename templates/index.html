@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biomarker Dashboard</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #f0f4f8;
+      --card-bg: #ffffff;
+      --text-color: #333;
+      --header-bg: #2c3e50;
+      --header-color: #fff;
+      --footer-color: #999;
+      --highlight-color: #ffe0e0;
+    }
+    body.dark-mode {
+      --bg-color: #121212;
+      --card-bg: #1f1f1f;
+      --text-color: #e0e0e0;
+      --header-bg: #181818;
+      --header-color: #ffffff;
+      --footer-color: #666;
+      --highlight-color: #402020;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+      background: var(--bg-color);
+      color: var(--text-color);
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+    header {
+      background-color: var(--header-bg);
+      color: var(--header-color);
+      padding: 20px 40px;
+      text-align: center;
+    }
+    header h1 { margin: 0; font-size: 28px; font-weight: 600; }
+    .date {
+      text-align: center;
+      font-size: 14px;
+      margin-top: 8px;
+      color: var(--footer-color);
+    }
+    .mode-toggle {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 34px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "\2600";
+      font-size: 18px;
+      text-align: center;
+      line-height: 34px;
+      width: 26px;
+      height: 26px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: 0.4s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: #007bff;
+    }
+    input:checked + .slider:before {
+      transform: translateX(26px);
+      content: "\1F319";
+    }
+    main {
+      padding: 30px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .chart-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .chart-card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      transition: background 0.3s ease;
+    }
+    .chart-card.alert {
+      background: var(--highlight-color);
+    }
+    .chart-card h3 {
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
+    footer {
+      text-align: center;
+      font-size: 13px;
+      padding: 20px;
+      color: var(--footer-color);
+    }
+    #spinner {
+      display: none;
+      font-size: 40px;
+      animation: spin 1s infinite linear;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Biomarker Trends Dashboard</h1>
+    <div class="date" id="reportDate">Loading report date...</div>
+  </header>
+
+  <div class="mode-toggle">
+    <label class="switch">
+      <input type="checkbox" id="modeSwitch" onchange="toggleMode()">
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <main>
+    <div id="uploadContainer" style="text-align:center; margin: 20px;">
+      <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="report" accept="application/pdf" required />
+        <button type="submit">Upload Report</button>
+      </form>
+      <div id="uploadStatus" style="margin-top: 10px; font-weight: bold;"></div>
+      <div id="spinner">🧪</div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card" id="totalCholesterolCard"><h3>Total Cholesterol</h3><canvas id="totalCholesterolChart"></canvas></div>
+      <div class="chart-card" id="ldlCard"><h3>LDL</h3><canvas id="ldlChart"></canvas></div>
+      <div class="chart-card" id="hdlCard"><h3>HDL</h3><canvas id="hdlChart"></canvas></div>
+      <div class="chart-card" id="triglyceridesCard"><h3>Triglycerides</h3><canvas id="triglyceridesChart"></canvas></div>
+      <div class="chart-card" id="creatinineCard"><h3>Creatinine</h3><canvas id="creatinineChart"></canvas></div>
+      <div class="chart-card" id="vitaminDCard"><h3>Vitamin D</h3><canvas id="vitaminDChart"></canvas></div>
+      <div class="chart-card" id="vitaminB12Card"><h3>Vitamin B12</h3><canvas id="vitaminB12Chart"></canvas></div>
+      <div class="chart-card" id="hba1cCard"><h3>HbA1c</h3><canvas id="hba1cChart"></canvas></div>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 Biomarker Visualizer | Made by Hemanth
+  </footer>
+
+  <!-- Dark mode toggle logic -->
+  <script>
+    function toggleMode() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      document.getElementById('modeSwitch').checked = isDark;
+    }
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        document.getElementById('modeSwitch').checked = true;
+      }
+    });
+  </script>
+
+  <!-- Scripts placed at bottom -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
